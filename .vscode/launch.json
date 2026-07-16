@@ -1,0 +1,35 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Quick benchmark (--quick)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/metaheuristic_xai/main.py",
+            "cwd": "${workspaceFolder}/metaheuristic_xai",
+            "python": "${workspaceFolder}/.venv/bin/python3",
+            "console": "integratedTerminal",
+            "args": ["--quick"]
+        },
+        {
+            "name": "Full benchmark (30 runs)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/metaheuristic_xai/main.py",
+            "cwd": "${workspaceFolder}/metaheuristic_xai",
+            "python": "${workspaceFolder}/.venv/bin/python3",
+            "console": "integratedTerminal",
+            "args": ["--n-runs", "30"]
+        },
+        {
+            "name": "Fitness-weight ablation",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/metaheuristic_xai/run_ablation.py",
+            "cwd": "${workspaceFolder}/metaheuristic_xai",
+            "python": "${workspaceFolder}/.venv/bin/python3",
+            "console": "integratedTerminal",
+            "args": ["--n-runs", "10"]
+        }
+    ]
+}
