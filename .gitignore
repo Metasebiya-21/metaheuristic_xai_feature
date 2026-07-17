@@ -18,3 +18,4 @@
 *.synctex.gz(old)
 .DS_Store
 *.zip
+.vscode
