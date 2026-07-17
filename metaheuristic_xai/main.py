@@ -4,7 +4,8 @@ Benchmark: GA, binary PSO, and simulated annealing vs a SHAP baseline
 on the Breast Cancer Wisconsin (scaled) dataset.
 
 Reproducibility: each ``run i`` uses ``random_state=42 + i`` for the stratified
-split, and metaheuristics are seeded with ``42 + i`` in their respective modules.
+split; SHAP, GA, PSO, and SA share that split (paired design). Metaheuristics are
+seeded with ``42 + i`` in their respective modules.
 """
 
 from __future__ import annotations
@@ -76,7 +77,7 @@ def parse_args() -> argparse.Namespace:
         "--n-runs",
         type=int,
         default=30,
-        help="Independent stratified holdouts; default 30 for publication stats.",
+        help="Paired stratified holdouts (all methods share each split); default 30.",
     )
     p.add_argument(
         "--quick",
@@ -215,7 +216,7 @@ def main() -> None:
             logger.critical("SA run %d failed: %s", r, e)
             raise
         if (r + 1) % max(1, n_runs // 3) == 0 or (r + 1) == n_runs:
-            logger.info("Finished %d / %d independent data splits.", r + 1, n_runs)
+            logger.info("Finished %d / %d paired data splits.", r + 1, n_runs)
 
     rec_dicts: list[dict] = [dataclasses.asdict(x) for x in records] if records else []
     save_results_csv(rec_dicts, RESULTS / "all_runs.csv")
@@ -229,14 +230,15 @@ def main() -> None:
             "comparison": w.comparison,
             "statistic": w.statistic,
             "pvalue": w.pvalue,
-            "n_a": w.n_a,
-            "n_b": w.n_b,
+            "n_pairs": w.n_pairs,
         }
         for w in w_list
     ]
     if w_rows:
         pd.DataFrame(w_rows).to_csv(RESULTS / "wilcoxon_vs_shap.csv", index=False)
-        logger.info("Saved Wilcoxon (rank-sum) test results to results/wilcoxon_vs_shap.csv")
+        logger.info(
+            "Saved Wilcoxon (signed-rank) test results to results/wilcoxon_vs_shap.csv"
+        )
 
     plot_fitness_convergence(
         {
@@ -245,7 +247,7 @@ def main() -> None:
             "SA (mean)": sa_hists,
         },
         PLOTS / "convergence_fitness.png",
-        title="Best fitness: mean ± std over independent runs (lower = better)",
+        title="Best fitness: mean ± std over paired runs (lower = better)",
     )
     for col, fname, t, ylab in (
         (
@@ -275,18 +277,23 @@ def main() -> None:
         "\n" + "-" * 72
         + "\nSUMMARY (mean ± std) — n_runs="
         + str(n_runs)
-        + " independent stratified splits (random_state=42+i)\n"
+        + " paired stratified splits (random_state=42+i; methods share each split)\n"
         + "-" * 72
     )
     print(sm.to_string(index=False))
     print("-" * 72)
     if w_list:
-        print("Wilcoxon rank-sum (two-sided) on test accuracy — vs SHAP:\n")
+        print("Wilcoxon signed-rank (two-sided, paired) on test accuracy — vs SHAP:\n")
         for w in w_list:
-            line = f"  {w.comparison}:  statistic={w.statistic:.5g}  p={w.pvalue:.4g}  n={w.n_a} vs n={w.n_b}"
+            line = (
+                f"  {w.comparison}:  statistic={w.statistic:.5g}  "
+                f"p={w.pvalue:.4g}  n_pairs={w.n_pairs}"
+            )
             print(line)
     else:
-        print("No Wilcoxon table: run with --n-runs >=2 (default 30) to rank-sum test.")
+        print(
+            "No Wilcoxon table: run with --n-runs >=2 (default 30) for signed-rank test."
+        )
     print("-" * 72)
     print(f"Artifacts:  {RESULTS!s}  and  {PLOTS!s}\n")
     logger.info("Benchmark complete.")

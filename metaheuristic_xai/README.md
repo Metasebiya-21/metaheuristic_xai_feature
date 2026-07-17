@@ -27,13 +27,14 @@ Optional: limit parallelism inside `RandomForestClassifier` (e.g. HPC, CI, or to
 export SKLEARN_N_JOBS=1
 ```
 
-## Run (default 30 independent splits; may take a long time)
+## Run (default 30 paired splits; may take a long time)
 
 ```bash
 python3 main.py
 ```
 
 * Each run $i$ uses a **new stratified** `train_test_split(..., random_state=42 + i)`.
+* **SHAP, GA, PSO, and SA share that split** (paired design); Wilcoxon signed-rank compares per-split accuracy differences.
 * GA/PSO/SA and the tree models use the same `base_seed` pattern for stochastic engines.
 
 ## Quick smoke test (short schedul, one split)
@@ -64,12 +65,12 @@ cd report && make
 |------|-------------|
 | `results/all_runs.csv` | One row per (run, method): accuracy, \|S\|, fitness, wall time. |
 | `results/summary.csv` | Per-method means and standard deviations. |
-| `results/wilcoxon_vs_shap.csv` | **Wilcoxon rank-sum** (independent two-sample) on test **accuracy** vs SHAP, per metaheuristic. |
+| `results/wilcoxon_vs_shap.csv` | **Wilcoxon signed-rank** (paired by `run_id`) on test **accuracy** vs SHAP, per metaheuristic. |
 | `plots/shap_baseline_top_features.png` | Mean \|SHAP\| for the top-$k$ baseline (first run with `--quick` or run 0). |
 | `plots/convergence_fitness.png` | Mean best fitness (± std) for GA, PSO, and SA. |
 | `plots/bar_*.png` | Accuracy, feature count, and runtime (means). |
 
-**Note:** for meaningful Wilcoxon inferences, use the default $n_\text{runs} \ge 5$; paper-grade studies typically use 30+ independent splits.
+**Note:** for meaningful Wilcoxon inferences, use the default $n_\text{runs} \ge 5$; paper-grade studies typically use 30+ paired splits.
 
 ## Example console output (abbreviated, `--quick`)
 
@@ -77,10 +78,10 @@ The following is representative of a successful end-of-run log:
 
 ```
 --quick: 1 data split, GA/PSO=5 steps, SA cap=150.
-Finished 1 / 1 independent data splits.
+Finished 1 / 1 paired data splits.
 Saved run-level CSV: results/all_runs.csv (4 rows).
 ...
-SUMMARY (mean ± std) — n_runs=1 independent stratified splits (random_state=42+i)
+SUMMARY (mean ± std) — n_runs=1 paired stratified splits (random_state=42+i; methods share each split)
  method  n_runs  accuracy_mean  ...
   SHAP       1         0.9474   ...
     GA       1         0.9737   ...

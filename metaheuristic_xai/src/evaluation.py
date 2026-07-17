@@ -35,13 +35,12 @@ class RunRecord:
 
 @dataclass
 class WilcoxonResult:
-    """Result of a two-sided Wilcoxon rank-sum (Mann-Whitney U) style comparison."""
+    """Result of a two-sided Wilcoxon signed-rank (paired) comparison."""
 
     comparison: str
     statistic: float
     pvalue: float
-    n_a: int
-    n_b: int
+    n_pairs: int
 
 
 def records_to_dataframe(
@@ -101,31 +100,50 @@ def wilcoxon_against_baseline(
     name_baseline: str = "SHAP",
 ) -> Optional[WilcoxonResult]:
     """
-    **Wilcoxon rank-sum test** (independent two-sample): compare a vector of
-    *accuracies* (one per independent data split) from a metaheuristic to the
-    SHAP baseline. Uses :func:`scipy.stats.ranksums` (two-sided).
+    **Wilcoxon signed-rank test** (paired): compare accuracies on matched
+    train/test splits (same ``run_id``). Uses :func:`scipy.stats.wilcoxon`
+    (two-sided) on the per-split differences.
+
+    ``acc_method`` and ``acc_baseline`` must be aligned (same length, same order).
 
     Returns
     -------
     result or None
-        ``None`` if either sample is empty or the test cannot be run.
+        ``None`` if pairing is invalid or the test cannot be run.
     """
     a = np.asarray(acc_method, dtype=np.float64).ravel()
     b = np.asarray(acc_baseline, dtype=np.float64).ravel()
-    if a.size < 2 or b.size < 2:
-        logger.info(
-            "Wilcoxon skipped: need n>=2 per group; got n=%d vs n=%d.",
+    if a.size != b.size:
+        logger.error(
+            "Paired Wilcoxon requires equal-length vectors; got n=%d vs n=%d.",
             a.size,
             b.size,
         )
         return None
+    if a.size < 2:
+        logger.info(
+            "Wilcoxon skipped: need n>=2 paired splits; got n=%d.",
+            a.size,
+        )
+        return None
+    diffs = a - b
+    n_nonzero = int(np.count_nonzero(diffs))
+    if n_nonzero < 1:
+        logger.warning(
+            "Wilcoxon skipped for %s vs %s: all paired differences are zero.",
+            name_method,
+            name_baseline,
+        )
+        return None
     try:
         try:
-            res = stats.ranksums(a, b, alternative="two-sided")
+            res = stats.wilcoxon(
+                a, b, alternative="two-sided", zero_method="wilcox"
+            )
         except TypeError:
-            res = stats.ranksums(a, b)
+            res = stats.wilcoxon(a, b, zero_method="wilcox")
     except (ValueError, TypeError) as e:
-        logger.error("ranksums failed: %s", e)
+        logger.error("wilcoxon failed: %s", e)
         return None
     label = f"{name_method} vs {name_baseline} (accuracy)"
     pval = float(res.pvalue) if hasattr(res, "pvalue") else float(res[1])  # type: ignore[union-attr]
@@ -133,27 +151,44 @@ def wilcoxon_against_baseline(
         comparison=label,
         statistic=float(res.statistic) if hasattr(res, "statistic") else float(res[0]),  # type: ignore[union-attr]
         pvalue=pval,
-        n_a=a.size,
-        n_b=b.size,
+        n_pairs=a.size,
     )
 
 
 def all_wilcoxon_vs_shap(
     frame: pd.DataFrame, baseline_name: str = "SHAP"
 ) -> list[WilcoxonResult]:
-    """Run SHAP-baseline tests for **GA, PSO, and SA** when columns match."""
+    """
+    Run paired SHAP-baseline Wilcoxon signed-rank tests for GA, PSO, and SA.
+
+    Accuracies are aligned on ``run_id`` so each split contributes one matched pair.
+    """
     out: list[WilcoxonResult] = []
+    if "run_id" not in frame.columns:
+        logger.warning("No run_id column; cannot pair methods for Wilcoxon.")
+        return out
     base = frame[frame["method"] == baseline_name]
     if base.empty:
         logger.warning("No SHAP rows; Wilcoxon not computed.")
         return out
-    acc_s = base["accuracy"].to_numpy()
+    base_acc = base.set_index("run_id")["accuracy"]
     for other in ("GA", "PSO", "SA"):
         sub = frame[frame["method"] == other]
         if sub.empty:
             continue
+        other_acc = sub.set_index("run_id")["accuracy"]
+        paired = pd.concat(
+            [other_acc.rename("method"), base_acc.rename("baseline")],
+            axis=1,
+            join="inner",
+        ).dropna()
+        if paired.empty:
+            logger.warning("No overlapping run_id for %s vs %s.", other, baseline_name)
+            continue
         r = wilcoxon_against_shap(
-            acc_method=sub["accuracy"].to_numpy(), acc_baseline=acc_s, name_method=other
+            acc_method=paired["method"].to_numpy(),
+            acc_baseline=paired["baseline"].to_numpy(),
+            name_method=other,
         )
         if r is not None:
             out.append(r)
