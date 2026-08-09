@@ -1,136 +1,103 @@
-# Metaheuristic XAI Feature Selection Benchmark
+# Metaheuristic vs. XAI Feature Selection Benchmark
 
-This repository benchmarks nature-inspired feature selection methods against a SHAP-based baseline on the Breast Cancer Wisconsin dataset. The project compares a genetic algorithm (GA), binary particle swarm optimization (BPSO), and simulated annealing (SA) with a SHAP reference method using paired stratified train/test splits and a Random Forest classifier.
+Benchmarks nature-inspired metaheuristics against explainability-based and classical
+feature selection across five public datasets and five classifier families, under a
+shared evaluation oracle and a single scalar fitness.
 
-## What this project does
+## What it compares
 
-The workflow is designed for reproducible experiments in feature selection and explainable AI:
+| Family | Methods |
+|---|---|
+| Metaheuristic (scalar) | `ga` (GA/DEAP), `bpso` (binary PSO/PySwarms), `sa` (simulated annealing), `gwo` (grey wolf) |
+| Metaheuristic (multi-objective) | `nsga2` |
+| XAI | `shap` (TreeExplainer top-k), `lime` (aggregated LIME weights top-k) |
+| Classical | `lasso` (L1 logistic regression), `rfe`, `boruta` |
+| Baseline | `full_features` |
 
-- Load and scale the Breast Cancer Wisconsin dataset
-- Create paired stratified splits for all methods
-- Evaluate binary feature masks with a Random Forest-based fitness function
-- Compare metaheuristic search methods to a SHAP-top-k baseline
-- Generate CSV summaries and visualization artifacts for analysis and reporting
+**Datasets** (`--list-datasets`): `wdbc`, `ionosphere` (low-dim), `madelon` (medium),
+`colon`, `leukemia` (ultra-high-dim gene expression; pre-filtered to the top 300
+features on the training split only).
 
-The optimization objective is:
+**Classifiers**: `random_forest`, `xgboost`, `lightgbm`, `svm`, `mlp`.
 
-$$
-f(S) = 0.9(1 - \text{Accuracy}) + 0.1\frac{|S|}{d}
-$$
+## Fitness (minimized)
 
-where:
-
-- $S$ is the selected feature subset
-- $d$ is the total number of features
-- lower values are better
-
-The all-zero mask is treated as the worst-case solution with zero accuracy and maximum penalty.
-
-## Project structure
-
-- [main.py](main.py) — top-level entry point that forwards to the benchmark runner
-- [metaheuristic_xai/main.py](metaheuristic_xai/main.py) — main experiment runner
-- [metaheuristic_xai/src](metaheuristic_xai/src) — implementation modules for:
-  - [metaheuristic_xai/src/baseline.py](metaheuristic_xai/src/baseline.py) — SHAP baseline
-  - [metaheuristic_xai/src/ga.py](metaheuristic_xai/src/ga.py) — genetic algorithm
-  - [metaheuristic_xai/src/pso.py](metaheuristic_xai/src/pso.py) — binary PSO
-  - [metaheuristic_xai/src/sa.py](metaheuristic_xai/src/sa.py) — simulated annealing
-  - [metaheuristic_xai/src/evaluation.py](metaheuristic_xai/src/evaluation.py) — metrics, CSV export, and Wilcoxon tests
-  - [metaheuristic_xai/src/fitness.py](metaheuristic_xai/src/fitness.py) — fitness function and Random Forest evaluation
-  - [metaheuristic_xai/src/data_loader.py](metaheuristic_xai/src/data_loader.py) — dataset loading and preprocessing
-  - [metaheuristic_xai/src/utils.py](metaheuristic_xai/src/utils.py) — plotting and helper functions
-- [metaheuristic_xai/run_ablation.py](metaheuristic_xai/run_ablation.py) — GA fitness-weight ablation study
-- [metaheuristic_xai/results](metaheuristic_xai/results) — generated CSV artifacts
-- [metaheuristic_xai/plots](metaheuristic_xai/plots) — generated figures
-- [metaheuristic_xai/report](metaheuristic_xai/report) — LaTeX term paper source and build tooling
-
-## Requirements
-
-This project uses Python 3.10+ (the package metadata targets 3.12). Install the dependencies with:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+```
+f(S) = alpha * (1 - accuracy) + (1 - alpha) * (|S| / d)
 ```
 
-The dependency list includes:
+`alpha` defaults to `0.8`. The all-zero mask is the worst case (accuracy 0,
+fitness 1). NSGA-II instead optimizes `(error, feature_ratio)` as two independent
+objectives.
 
-- numpy
-- pandas
-- matplotlib
-- scikit-learn
-- scipy
-- shap
-- deap
-- pyswarms
-
-For reproducible and less noisy runs, it is also useful to cap joblib/sklearn parallelism:
+## Install
 
 ```bash
-export SKLEARN_N_JOBS=1
+uv sync            # or: pip install -e .
 ```
 
-## Running the benchmark
+Python 3.12+. Dependencies are declared in `pyproject.toml` (`uv.lock` pins them).
 
-From the repository root:
+## Run
 
 ```bash
-python3 main.py
+python main.py --quick --datasets wdbc --methods ga shap sa
+python main.py --datasets wdbc ionosphere --classifiers random_forest --methods all --seeds 5
 ```
 
-This runs the full benchmark with the default configuration of 30 paired splits. Each split uses a deterministic random seed of $42 + i$, and SHAP, GA, PSO, and SA all share the same split for a paired comparison design.
+Flags: `--datasets/--classifiers/--methods` (names or `all`), `--seeds N` (splits
+`42 .. 42+N-1`), `--quick` (1 seed + short search schedules), `--estimate` (print
+the evaluation budget and exit), `--complexity`, `--list-datasets`,
+`--results-dir/--plots-dir`.
 
-### Quick smoke test
+Outputs (default `results/`, `plots/`):
+
+| Path | Contents |
+|---|---|
+| `results/all_runs.csv` | one row per (dataset, classifier, method, seed): accuracy + full metric set, `selected_features`, `fitness`, `runtime_seconds`, oracle evaluation counts |
+| `results/summary.csv` | per (dataset, classifier, method) means |
+| `results/wilcoxon_results.csv` | paired Wilcoxon signed-rank vs SHAP (when >= 2 seeds and `shap` is included) |
+| `results/<dataset>_<clf>_<method>_seed<n>.parquet` | per-run artifact (resume-friendly) |
+| `plots/convergence.png` | best-fitness convergence for the search methods |
+
+### Fitness-weight ablation
 
 ```bash
-python3 main.py --quick
+python src/run_ablation.py --n-runs 10        # GA with alpha in {0.7, 0.8, 0.9}
 ```
 
-This uses:
+Writes `results/ablation_alpha.csv` and `results/ablation_alpha_summary.csv`.
 
-- one data split
-- shorter GA and PSO schedules
-- a smaller SA step cap
+### Notebook
 
-It is useful for verifying that the pipeline runs correctly without waiting for the full experiment.
+`src/notebook/benchmark.ipynb` runs the whole flow top to bottom — setup, the
+same `run_full_benchmark` the CLI uses, optional sensitivity sweeps, and analysis.
+See `src/notebook/README.md`.
 
-### Fitness-weight ablation study
+## Package layout (`src/metaheuristic_xai/`)
 
-```bash
-python3 metaheuristic_xai/run_ablation.py --n-runs 10
 ```
-
-This evaluates GA behavior for different accuracy weights ($\alpha \in \{0.7, 0.8, 0.9\}$) and writes ablation CSV files to the results directory.
-
-## Outputs
-
-Running the benchmark generates the following artifacts:
-
-- [metaheuristic_xai/results/all_runs.csv](metaheuristic_xai/results/all_runs.csv) — one row per run and method with accuracy, selected feature count, fitness, and runtime
-- [metaheuristic_xai/results/summary.csv](metaheuristic_xai/results/summary.csv) — per-method summary statistics
-- [metaheuristic_xai/results/wilcoxon_vs_shap.csv](metaheuristic_xai/results/wilcoxon_vs_shap.csv) — paired Wilcoxon signed-rank test results versus SHAP
-- [metaheuristic_xai/plots/convergence_fitness.png](metaheuristic_xai/plots/convergence_fitness.png) — convergence plots for GA, PSO, and SA
-- [metaheuristic_xai/plots/bar_accuracy.png](metaheuristic_xai/plots/bar_accuracy.png), [metaheuristic_xai/plots/bar_n_features.png](metaheuristic_xai/plots/bar_n_features.png), and [metaheuristic_xai/plots/bar_runtime.png](metaheuristic_xai/plots/bar_runtime.png) — summary bar charts
-- [metaheuristic_xai/plots/shap_baseline_top_features.png](metaheuristic_xai/plots/shap_baseline_top_features.png) — top-k SHAP feature importance plot
-
-## Rebuilding the report
-
-The LaTeX report source is located in [metaheuristic_xai/report](metaheuristic_xai/report). To build the paper:
-
-```bash
-cd metaheuristic_xai/report
-make
+datasets.py        dataset registry + train-only preprocessing / split
+classifiers.py     classifier adapters + CLASSIFIER_REGISTRY
+oracle.py          EvaluationOracle: memoized mask -> metrics
+selectors/         base.py, classical.py, metaheuristic.py + SELECTOR_REGISTRY
+algorithms/        ga.py pso.py sa.py gwo.py nsga2.py (search operators)
+config.py          BenchmarkConfig, presets, per-method evaluation budgets
+runner.py          run_feature_selection / run_full_benchmark / sensitivity sweeps
+evaluation.py      Wilcoxon/Friedman tests, CSV export, summary tables
+pareto.py          Pareto-front metrics and plots (NSGA-II)
+plots.py           convergence and bar-chart helpers
+complexity.py      asymptotic complexity reference (--complexity)
+cli.py             argument parsing -> runner -> summaries/plots
 ```
-
-Or use the provided shell script.
 
 ## Notes
 
-- The benchmark is intended for academic and research use.
-- For statistically meaningful Wilcoxon comparisons, use a larger number of paired splits (for example, 30 or more).
-- The implementation uses standardized features and a Random Forest classifier for consistent evaluation across methods.
-
-## License
-
-This repository is intended for academic and research use. When publishing results, cite the underlying libraries and datasets used by the project.
+- Leakage protocol: the search optimises against an inner validation split of the
+  training set (`BenchmarkConfig.search_val_size`, default 0.25); the reported
+  `accuracy` is a single held-out **test** evaluation of the final mask, identical
+  for every method. `val_accuracy` and `generalization_gap` (val - test) are also
+  recorded. `results/feature_stability.csv` reports selection stability across seeds
+  (mean pairwise Jaccard + Nogueira index).
+- For meaningful paired statistics use `--seeds 30` or more.
+- Academic / research use; cite scikit-learn, SHAP, LIME, DEAP, PySwarms, Boruta.

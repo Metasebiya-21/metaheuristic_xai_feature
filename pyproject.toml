@@ -1,10 +1,134 @@
 [project]
 name = "metaheuristic-xai-feature"
 version = "0.1.0"
-description = "Add your description here"
+description = "metaheuristic_xai_feature: Metaheuristic-Driven XAI for Feature Selection Benchmarks"
 readme = "README.md"
 requires-python = ">=3.12"
+license = { text = "Proprietary" }
+
+authors = [
+    { name = "Metasebiya Mulugeta", email = "metasebiya@eaglelionsystems.com" }
+]
+
+maintainers = [
+    { name = "Metasebiya Mulugeta", email = "metasebiya@eaglelionsystems.com" }
+]
+
+keywords = [
+    "feature-selection",
+    "metaheuristic",
+    "explainable-ai",
+    "machine-learning",
+    "benchmark",
+]
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+
 dependencies = [
+    "boruta>=0.4.3",
+    "deap>=1.4.4",
+    "lightgbm>=4.7.0",
+    "lime>=0.2.0.1",
+    "matplotlib>=3.11.1",
     "numpy<2.5",
     "pandas>=3.0.3",
+    "pyarrow>=25.0.0",
+    "pyswarms>=1.3.0",
+    "scikit-learn>=1.9.0",
+    "shap>=0.52.0",
+    "xgboost>=3.4.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# Configure Hatch to map src/ as the root source directory
+[tool.hatch.build.targets.wheel]
+packages = ["src/metaheuristic_xai"]
+
+[tool.hatch.build.targets.editable]
+packages = ["src/metaheuristic_xai"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+indent-width = 4
+
+exclude = [
+    ".git",
+    ".venv",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".mypy_cache",
+    ".vscode",
+    "__pycache__",
+    "build",
+    "dist",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+    "W",
+]
+
+ignore = []
+
+fixable = ["ALL"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests",
+]
+
+addopts = [
+    "--capture=no",
+    "--cov=src/metaheuristic_xai",
+    "--cov-report=term-missing",
+]
+
+asyncio_default_fixture_loop_scope = "session"
+
+env = []
+
+[tool.coverage.run]
+source = [
+    "src/metaheuristic_xai",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+check_untyped_defs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+warn_unused_configs = true
+warn_unused_ignores = true
+warn_return_any = true
+explicit_package_bases = true
+ignore_missing_imports = true
+mypy_path = "src"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "jupyterlab>=4.0",
+    "ipykernel>=6.0",
+    "ruff>=0.6",
 ]

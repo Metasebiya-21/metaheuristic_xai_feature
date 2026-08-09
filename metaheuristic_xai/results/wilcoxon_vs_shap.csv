@@ -1,4 +1,0 @@
-comparison,statistic,pvalue,n_pairs
-GA vs SHAP (accuracy),0.0,0.001953125,10
-PSO vs SHAP (accuracy),0.0,0.001953125,10
-SA vs SHAP (accuracy),0.0,0.001953125,10

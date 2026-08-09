@@ -1,12 +1,11 @@
-#!/usr/bin/env python3
-"""Repository entry point: forwards to the benchmark CLI."""
+"""Module entry point: ``python -m metaheuristic_xai`` / ``python src``."""
 
 from __future__ import annotations
 
 import sys
 from pathlib import Path
 
-_SRC = Path(__file__).resolve().parent / "src"
+_SRC = Path(__file__).resolve().parent
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
