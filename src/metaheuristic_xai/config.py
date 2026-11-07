@@ -151,7 +151,7 @@ BENCHMARK_CONFIG = BenchmarkConfig(
         "boruta",
         "full_features",
     ],
-    seeds=[42, 43, 44],
+    seeds=[42, 43, 44, 45, 46],
     method_kwargs=DEFAULT_METHOD_KWARGS,
     alpha_values=[0.5, 0.7, 0.8, 0.9, 1.0],
     results_dir=Path("results"),

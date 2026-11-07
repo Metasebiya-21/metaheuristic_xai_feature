@@ -60,13 +60,15 @@ Outputs (default `results/`, `plots/`):
 | `results/<dataset>_<clf>_<method>_seed<n>.parquet` | per-run artifact (resume-friendly) |
 | `plots/convergence.png` | best-fitness convergence for the search methods |
 
-### Fitness-weight ablation
+### Fitness-weight x budget ablation
 
 ```bash
-python src/run_ablation.py --n-runs 10        # GA with alpha in {0.7, 0.8, 0.9}
+python src/run_ablation.py --generations 40 100 --n-jobs -1   # GA + RF, alpha in {0.7, 0.8, 0.9}
 ```
 
-Writes `results/ablation_alpha.csv` and `results/ablation_alpha_summary.csv`.
+Defaults: `wdbc ionosphere colon`, 5 seeds, population 50 (40 generations = the
+benchmark's 2,000-evaluation budget). Writes `results/ablation/ablation_runs.csv`
+and `results/ablation/ablation_summary.csv`. `--quick` is a one-run smoke test.
 
 ### Notebook
 
