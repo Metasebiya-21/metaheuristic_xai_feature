@@ -279,13 +279,36 @@ _FAMILY_COLOR = {
     "unknown": "#6c757d",
 }
 
+_FAMILY_LABEL = {
+    "scalar_metaheuristic": "metaheuristic",
+    "multiobjective": "multi-objective",
+    "xai": "XAI attribution",
+    "classical": "classical",
+    "baseline": "no selection",
+}
+
+# Code method names -> names used in the paper.
+METHOD_LABELS = {
+    "full_features": "Full feature set", "boruta": "Boruta", "rfe": "RFE",
+    "lasso": "LASSO", "lime": "LIME", "shap": "SHAP", "ga": "GA", "bpso": "BPSO",
+    "sa": "SA", "gwo": "GWO", "nsga2": "NSGA-II",
+}
+
+
+def _label(method: str) -> str:
+    return METHOD_LABELS.get(method, method)
+
 
 def _agg_by_method(df: pd.DataFrame, col: str, how: str = "mean") -> "pd.Series":
     s = df.groupby("method")[col].agg(how)
     return s.sort_values()
 
 
-def plot_accuracy_parsimony(df: pd.DataFrame, path: Path, title: str = "Accuracy vs. subset size") -> None:
+def plot_accuracy_parsimony(
+    df: pd.DataFrame, path: Path, title: str = "Accuracy vs. subset size",
+    figsize: tuple[float, float] | None = None, dpi: int = 150,
+    rc: dict | None = None, fs_point_label: float = 16, fs_legend: float = 15,
+) -> None:
     """Scatter of mean held-out test accuracy against mean number of selected
     features, one labelled point per method, coloured by family."""
     import matplotlib
@@ -293,7 +316,7 @@ def plot_accuracy_parsimony(df: pd.DataFrame, path: Path, title: str = "Accuracy
     matplotlib.use("Agg", force=True)
     import matplotlib.pyplot as plt
 
-    plt.rcParams.update(_REPORT_RC)
+    plt.rcParams.update(rc or _REPORT_RC)
 
     g = df.groupby("method").agg(
         acc=("accuracy", "mean"),
@@ -305,16 +328,68 @@ def plot_accuracy_parsimony(df: pd.DataFrame, path: Path, title: str = "Accuracy
     # Width stays as before (it sets the on-page font-size ratio once LaTeX
     # rescales to a fixed page width); only height grows, so the plot gets
     # taller/roomier on the page without shrinking the text.
-    fig, ax = plt.subplots(figsize=(9, 7.5))
+    fig, ax = plt.subplots(figsize=figsize or (9, 7.5))
     g = g.sort_values("nfeat")
-    for j, (method, row) in enumerate(g.iterrows()):
+    for _, row in g.iterrows():
         ax.scatter(row["nfeat"], row["acc"], s=110,
                    color=_FAMILY_COLOR.get(row["fam"], "#6c757d"),
                    edgecolors="0.2", zorder=3)
-        dy = 10 if j % 2 == 0 else -18
-        ax.annotate(method, (row["nfeat"], row["acc"]), xytext=(7, dy),
-                    textcoords="offset points", fontsize=16)
     ax.set_xscale("log")
+
+    # Collision-avoiding label placement: points can cluster tightly (e.g.
+    # several metaheuristics at similar accuracy/feature-count), and a fixed
+    # alternating offset then overlaps labels illegibly. For each label, scan
+    # an expanding ring of candidate offsets (multiple radii x multiple
+    # angles) and keep the first whose real rendered bbox doesn't overlap any
+    # already-placed label OR any (including not-yet-labeled) point marker.
+    import math
+
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+
+    radii = [14, 22, 32, 45, 62, 85, 115, 150]
+    n_angles = 16
+    candidates = [
+        (r * math.cos(a), r * math.sin(a))
+        for r in radii
+        for a in (2 * math.pi * k / n_angles for k in range(n_angles))
+    ]
+
+    # Reserve a small box around every marker (not just labeled ones) up
+    # front so labels never sit on top of an unrelated point.
+    marker_bboxes = []
+    for _, row in g.iterrows():
+        x_disp, y_disp = ax.transData.transform((row["nfeat"], row["acc"]))
+        from matplotlib.transforms import Bbox
+        marker_bboxes.append(Bbox.from_bounds(x_disp - 7, y_disp - 7, 14, 14))
+    placed_bboxes = list(marker_bboxes)
+
+    # Place the highest/lowest-accuracy points first so dense mid-pack
+    # clusters (which need the most room) get to react to more placed
+    # neighbors rather than the reverse.
+    for _, row in g.sort_values("acc").iterrows():
+        best_ann, best_bbox = None, None
+        for dx, dy in candidates:
+            ann = ax.annotate(
+                _label(row.name), (row["nfeat"], row["acc"]), xytext=(dx, dy),
+                textcoords="offset points", fontsize=fs_point_label,
+            )
+            fig.canvas.draw()
+            bbox = ann.get_window_extent(renderer)
+            if not any(bbox.overlaps(b) for b in placed_bboxes):
+                best_ann, best_bbox = ann, bbox
+                break
+            ann.remove()
+        if best_ann is None:
+            # fall back to the farthest candidate even if it still overlaps
+            dx, dy = candidates[-1]
+            best_ann = ax.annotate(
+                _label(row.name), (row["nfeat"], row["acc"]), xytext=(dx, dy),
+                textcoords="offset points", fontsize=fs_point_label,
+            )
+            fig.canvas.draw()
+            best_bbox = best_ann.get_window_extent(renderer)
+        placed_bboxes.append(best_bbox)
     # extra headroom on the right so the rightmost point's label doesn't run
     # into the legend anchored just outside the axes
     x_lo, x_hi = ax.get_xlim()
@@ -331,15 +406,17 @@ def plot_accuracy_parsimony(df: pd.DataFrame, path: Path, title: str = "Accuracy
                         ("classical", _FAMILY_COLOR["classical"]),
                         ("baseline", _FAMILY_COLOR["baseline"])]
     ]
-    ax.legend(handles=handles, fontsize=15, loc="center left", bbox_to_anchor=(1.02, 0.5))
+    ax.legend(handles=handles, fontsize=fs_legend, loc="center left", bbox_to_anchor=(1.02, 0.5))
     plt.tight_layout()
-    fig.savefig(path, dpi=150, bbox_inches="tight")
+    fig.savefig(path, dpi=dpi, bbox_inches="tight", pad_inches=0.05)
     plt.close(fig)
     logger.info("Saved accuracy/parsimony plot: %s", path)
 
 
 def plot_generalization_gap_bars(
-    df: pd.DataFrame, path: Path, title: str = "Search overfitting: validation - test accuracy"
+    df: pd.DataFrame, path: Path, title: str = "Search overfitting: validation - test accuracy",
+    figsize: tuple[float, float] | None = None, dpi: int = 150,
+    rc: dict | None = None, fs_xtick: float = 16,
 ) -> None:
     """Bar chart of the mean (val_accuracy - test_accuracy) gap per method."""
     import matplotlib
@@ -347,7 +424,7 @@ def plot_generalization_gap_bars(
     matplotlib.use("Agg", force=True)
     import matplotlib.pyplot as plt
 
-    plt.rcParams.update(_REPORT_RC)
+    plt.rcParams.update(rc or _REPORT_RC)
 
     if "generalization_gap" not in df.columns:
         logger.warning("no 'generalization_gap' column; skipping %s", path)
@@ -356,23 +433,36 @@ def plot_generalization_gap_bars(
     fams = df.groupby("method")["method_family"].first()
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig, ax = plt.subplots(figsize=(7, 4.2))
-    ax.bar(s.index, s.values,
-           color=[_FAMILY_COLOR.get(fams.get(m, "unknown"), "#6c757d") for m in s.index],
-           edgecolor="0.2")
-    ax.axhline(0, color="0.3", lw=1)
-    ax.set_ylabel("val accuracy - test accuracy")
-    ax.set_title(title)
-    ax.tick_params(axis="x", rotation=25, labelsize=16)
-    plt.setp(ax.get_xticklabels(), ha="right")
+    # Horizontal bars: long method names sit on the y-axis instead of colliding
+    # as rotated x tick labels.
+    fig, ax = plt.subplots(figsize=figsize or (6.5, 4.4))
+    ax.barh([_label(m) for m in s.index], s.values,
+            color=[_FAMILY_COLOR.get(fams.get(m, "unknown"), "#6c757d") for m in s.index],
+            edgecolor="0.2")
+    ax.axvline(0, color="0.3", lw=1)
+    ax.invert_yaxis()
+    ax.set_xlabel("validation $-$ test accuracy")
+    if title:
+        ax.set_title(title)
+    ax.tick_params(axis="y", labelsize=fs_xtick)
+    from matplotlib.patches import Patch
+    present = [f for f in _FAMILY_LABEL if f in set(fams.values)]
+    ax.legend(handles=[Patch(facecolor=_FAMILY_COLOR[f], edgecolor="0.2", label=_FAMILY_LABEL[f])
+                       for f in present], loc="upper right", fontsize=0.85 * fs_xtick)
+    from matplotlib.ticker import FormatStrFormatter, MultipleLocator
+    ax.xaxis.set_major_locator(MultipleLocator(0.04))
+    ax.set_xlim(right=max(float(s.max()), 0.0) * 1.8 + 1e-3)  # empty room right of 0 for the legend
+    ax.xaxis.set_major_formatter(FormatStrFormatter("%.2f"))
     plt.tight_layout()
-    fig.savefig(path, dpi=150, bbox_inches="tight")
+    fig.savefig(path, dpi=dpi, bbox_inches="tight", pad_inches=0.05)
     plt.close(fig)
     logger.info("Saved generalization-gap plot: %s", path)
 
 
 def plot_stability_bars(
-    df: pd.DataFrame, path: Path, title: str = "Selection stability across seeds"
+    df: pd.DataFrame, path: Path, title: str = "Selection stability across seeds",
+    figsize: tuple[float, float] | None = None, dpi: int = 150,
+    rc: dict | None = None, fs_xtick: float = 16, fs_legend: float = 15,
 ) -> None:
     """Bar chart of mean Nogueira stability and mean pairwise Jaccard per method."""
     import matplotlib
@@ -380,7 +470,7 @@ def plot_stability_bars(
     matplotlib.use("Agg", force=True)
     import matplotlib.pyplot as plt
 
-    plt.rcParams.update(_REPORT_RC)
+    plt.rcParams.update(rc or _REPORT_RC)
 
     from metaheuristic_xai.evaluation import feature_stability
 
@@ -388,29 +478,66 @@ def plot_stability_bars(
     st = st.sort_values("nogueira_stability")
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    x = np.arange(len(st))
-    fig, ax = plt.subplots(figsize=(7, 4.2))
-    ax.bar(x - 0.2, st["nogueira_stability"], width=0.4, label="Nogueira index", color="#2e86ab")
-    ax.bar(x + 0.2, st["mean_jaccard"], width=0.4, label="mean pairwise Jaccard", color="#8ecae6")
-    ax.axhline(0, color="0.3", lw=1)
-    ax.set_xticks(x)
-    ax.set_xticklabels(st.index, rotation=25, ha="right", fontsize=16)
-    ax.set_ylabel("stability (1 = identical, ~0 = random)")
-    ax.set_title(title)
-    ax.legend(fontsize=15)
+    st = st.iloc[::-1]  # most stable on top
+    y = np.arange(len(st))
+    fig, ax = plt.subplots(figsize=figsize or (6.5, 4.4))
+    ax.barh(y - 0.2, st["nogueira_stability"], height=0.4, label="Nogueira", color="#2e86ab")
+    ax.barh(y + 0.2, st["mean_jaccard"], height=0.4, label="Jaccard", color="#8ecae6")
+    ax.axvline(0, color="0.3", lw=1)
+    ax.set_yticks(y)
+    ax.set_yticklabels([_label(m) for m in st.index], fontsize=fs_xtick)
+    ax.invert_yaxis()
+    ax.set_xlabel("stability (1 = identical, 0 = chance)")
+    if title:
+        ax.set_title(title)
+    ax.legend(fontsize=fs_legend, loc="lower right")
     plt.tight_layout()
-    fig.savefig(path, dpi=150, bbox_inches="tight")
+    fig.savefig(path, dpi=dpi, bbox_inches="tight", pad_inches=0.05)
     plt.close(fig)
     logger.info("Saved stability plot: %s", path)
+
+
+def _maximal_rank_cliques(vals: list[float], cd: float) -> list[tuple[int, int]]:
+    """All maximal cliques of a sorted 1-D rank sequence under threshold ``cd``:
+    index intervals ``[i, j]`` (inclusive) with ``vals[j] - vals[i] < cd`` that
+    cannot be extended in either direction without violating that bound.
+
+    Standard two-pointer sweep: for each left endpoint ``i``, the right
+    endpoint can only move forward as ``i`` increases (monotone window), then
+    an interval is kept only if it is not a strict subset of the interval
+    starting one position to its left (i.e. it is left-maximal too).
+    """
+    k = len(vals)
+    right = [0] * k
+    j = 0
+    for i in range(k):
+        if j < i:
+            j = i
+        while j + 1 < k and vals[j + 1] - vals[i] < cd:
+            j += 1
+        right[i] = j
+    cliques = []
+    for i in range(k):
+        j = right[i]
+        if j == i:
+            continue
+        if i > 0 and vals[j] - vals[i - 1] < cd:
+            continue  # not left-maximal: dominated by the clique starting at i-1
+        cliques.append((i, j))
+    return cliques
 
 
 def plot_cd_diagram(
     mean_ranks: "pd.Series", cd: float, path: Path,
     title: str = "Friedman + Nemenyi critical-difference diagram",
+    figsize: tuple[float, float] | None = None, dpi: int = 150,
+    fs_title: float = 26, fs_axis: float = 20, fs_method: float = 21,
+    clique_bar_spacing: float = 0.30, clique_bar_lw: float = 6,
 ) -> None:
     """Demsar critical-difference diagram: methods on a rank axis (best rank on the
-    left), labels stacked left/right, with cliques of methods that are not
-    significantly different (rank gap <= CD) joined by thick bars below the axis."""
+    left), labels stacked left/right, with every MAXIMAL clique of methods that
+    are not significantly different (max-min rank gap < CD) drawn as its own
+    horizontal bar, stacked at increasing depth below the axis."""
     import matplotlib
 
     matplotlib.use("Agg", force=True)
@@ -425,57 +552,63 @@ def plot_cd_diagram(
     lo = int(np.floor(min(vals)))
     hi = int(np.ceil(max(vals)))
 
+    cliques = _maximal_rank_cliques(vals, cd)
+    n_cliques = len(cliques)
+
     half = (k + 1) // 2
     step = 1.3                      # vertical spacing between stacked labels
+
+    # Reserve enough vertical room for every clique bar (stacked below the
+    # rank axis) before the method-label rows start, so bars never touch a
+    # label or the axis itself.
+    clique_area = 0.5 + n_cliques * clique_bar_spacing
+    label_top = -(clique_area + 0.35)   # y of the first (topmost) label row
 
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     # Keep the canvas small relative to the (large) font sizes below: this figure
     # gets scaled down to a fixed page width regardless of pixel count, so what
-    # matters for on-page legibility is the text-to-canvas ratio, not raw font pt.
-    fig, ax = plt.subplots(figsize=(9, 0.42 * k + 2.0))
+    # matters for on-page legibility is the text-to-canvas ratio, not raw font pt
+    # -- unless an explicit figsize is given (print export), in which case the
+    # caller has already chosen the font sizes to match that physical size.
+    fig, ax = plt.subplots(figsize=figsize or (9, 0.42 * k + clique_area + 1.6))
     ax.set_xlim(lo - 1.3, hi + 1.3)   # lowest (best) rank on the left, extra room for big labels
-    ax.set_ylim(-(half * step + 1.4), 2.8)
+    ax.set_ylim(label_top - half * step - 0.4, 2.8)
     ax.axis("off")
 
     # top rank axis
     ax.plot([lo, hi], [0, 0], color="k", lw=1.6)
     for t in range(lo, hi + 1):
         ax.plot([t, t], [0, 0.14], color="k", lw=1.6)
-        ax.text(t, 0.32, str(t), ha="center", va="bottom", fontsize=20)
+        ax.text(t, 0.32, str(t), ha="center", va="bottom", fontsize=fs_axis)
 
     # CD ruler
     y_cd = 1.6
     ax.plot([lo, lo + cd], [y_cd, y_cd], color="k", lw=3)
     for xx in (lo, lo + cd):
         ax.plot([xx, xx], [y_cd - 0.12, y_cd + 0.12], color="k", lw=3)
-    ax.text(lo + cd / 2, y_cd + 0.26, f"CD = {cd:.2f}", ha="center", fontsize=20)
+    ax.text(lo + cd / 2, y_cd + 0.26, f"CD = {cd:.2f}", ha="center", fontsize=fs_axis)
 
     for i, (name, r) in enumerate(zip(names, vals)):
         left = i < half
         row = i if left else (k - 1 - i)
-        y = -(row + 1) * step
+        y = label_top - row * step
         edge = (lo - 1.3) if left else (hi + 1.3)
         ax.plot([r, r], [0, y], color="0.35", lw=1.3)
         ax.plot([r, edge], [y, y], color="0.35", lw=1.3)
-        ax.text(edge, y, f"{name}  ({r:.2f})  ", va="center",
-                ha="right" if left else "left", fontsize=21)
+        ax.text(edge, y, f"{_label(name)}  ({r:.2f})  ", va="center",
+                ha="right" if left else "left", fontsize=fs_method)
 
-    # cliques: maximal runs of consecutive methods within CD
+    # every maximal clique gets its own bar, stacked at increasing depth
     y_bar = -0.34
-    j = 0
-    while j < k:
-        m = j
-        while m + 1 < k and (vals[m + 1] - vals[j]) <= cd:
-            m += 1
-        if m > j:
-            ax.plot([vals[j] - 0.05, vals[m] + 0.05], [y_bar, y_bar],
-                    color="crimson", lw=6, solid_capstyle="round")
-            y_bar -= 0.28
-        j = m + 1 if m > j else j + 1
+    for i, j in cliques:
+        ax.plot([vals[i] - 0.05, vals[j] + 0.05], [y_bar, y_bar],
+                color="crimson", lw=clique_bar_lw, solid_capstyle="round")
+        y_bar -= clique_bar_spacing
 
-    ax.set_title(title, fontsize=26, pad=14)
-    fig.savefig(path, dpi=150, bbox_inches="tight")
+    if title:
+        ax.set_title(title, fontsize=fs_title, pad=14)
+    fig.savefig(path, dpi=dpi, bbox_inches="tight", pad_inches=0.05)
     plt.close(fig)
     logger.info("Saved CD diagram: %s", path)
 
