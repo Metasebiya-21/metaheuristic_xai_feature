@@ -36,3 +36,4 @@ build
 dist
 .claude
 results_5seed
+verify_report
