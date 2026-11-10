@@ -34,3 +34,5 @@ outputs
 *.egg-info
 build
 dist
+.claude
+results_5seed
