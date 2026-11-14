@@ -1,0 +1,51 @@
+method,rank,feature,inclusion_rate
+GA,1,worst texture,0.72
+GA,2,worst concave points,0.6
+GA,3,mean concave points,0.36
+GA,4,mean area,0.32
+GA,5,mean texture,0.24
+GA,6,worst concavity,0.24
+GA,7,texture error,0.24
+GA,8,fractal dimension error,0.24
+GA,9,worst radius,0.2
+GA,10,mean concavity,0.2
+BPSO,1,mean texture,0.64
+BPSO,2,worst concave points,0.48
+BPSO,3,worst concavity,0.48
+BPSO,4,mean area,0.44
+BPSO,5,worst area,0.36
+BPSO,6,worst texture,0.32
+BPSO,7,mean perimeter,0.32
+BPSO,8,fractal dimension error,0.32
+BPSO,9,worst smoothness,0.32
+BPSO,10,worst symmetry,0.32
+Boruta,1,mean radius,1.0
+Boruta,2,mean texture,1.0
+Boruta,3,mean perimeter,1.0
+Boruta,4,mean area,1.0
+Boruta,5,mean smoothness,1.0
+Boruta,6,mean compactness,1.0
+Boruta,7,mean concavity,1.0
+Boruta,8,mean concave points,1.0
+Boruta,9,radius error,1.0
+Boruta,10,perimeter error,1.0
+SHAP,1,mean perimeter,1.0
+SHAP,2,mean concavity,1.0
+SHAP,3,mean concave points,1.0
+SHAP,4,worst radius,1.0
+SHAP,5,worst perimeter,1.0
+SHAP,6,worst area,1.0
+SHAP,7,worst concavity,1.0
+SHAP,8,worst concave points,1.0
+SHAP,9,area error,0.8
+SHAP,10,mean area,0.8
+RFE,1,mean concavity,1.0
+RFE,2,mean concave points,1.0
+RFE,3,worst radius,1.0
+RFE,4,worst perimeter,1.0
+RFE,5,worst area,1.0
+RFE,6,worst concave points,1.0
+RFE,7,mean perimeter,0.8
+RFE,8,worst concavity,0.8
+RFE,9,worst texture,0.8
+RFE,10,mean radius,0.6

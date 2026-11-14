@@ -1,0 +1,42 @@
+seed 42 n_features 30 X_train cols 30 identical to sklearn order: True
+seed 43 n_features 30 X_train cols 30 identical to sklearn order: True
+seed 44 n_features 30 X_train cols 30 identical to sklearn order: True
+seed 45 n_features 30 X_train cols 30 identical to sklearn order: True
+seed 46 n_features 30 X_train cols 30 identical to sklearn order: True
+0 mean radius
+1 mean texture
+2 mean perimeter
+3 mean area
+4 mean smoothness
+5 mean compactness
+6 mean concavity
+7 mean concave points
+8 mean symmetry
+9 mean fractal dimension
+10 radius error
+11 texture error
+12 perimeter error
+13 area error
+14 smoothness error
+15 compactness error
+16 concavity error
+17 concave points error
+18 symmetry error
+19 fractal dimension error
+20 worst radius
+21 worst texture
+22 worst perimeter
+23 worst area
+24 worst smoothness
+25 worst compactness
+26 worst concavity
+27 worst concave points
+28 worst symmetry
+29 worst fractal dimension
+INDEX mean texture 1
+INDEX worst area 23
+INDEX worst smoothness 24
+INDEX worst radius 20
+INDEX worst perimeter 22
+INDEX worst texture 21
+INDEX mean smoothness 4

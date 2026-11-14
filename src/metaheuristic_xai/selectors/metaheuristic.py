@@ -122,11 +122,15 @@ class BPSOSelector(FeatureSelector):
         iters: int = 100,
         oracle: Optional[EvaluationOracle] = None,
         random_state: int = 42,
+        c1: float = 0.5,
+        c2: float = 0.3,
+        w: float = 0.9,
         **kwargs: Any,
     ) -> None:
         super().__init__("bpso", oracle=oracle, random_state=random_state, **kwargs)
         self.swarm_size = swarm_size
         self.iters = iters
+        self.c1, self.c2, self.w = c1, c2, w
 
     def fit(
         self, X_train: NDArray[np.floating], y_train: NDArray[np.signedinteger]
@@ -141,6 +145,8 @@ class BPSOSelector(FeatureSelector):
             swarm_size=self.swarm_size,
             iters=self.iters,
             base_seed=self.random_state,
+            # same as run_binary_pso's built-in defaults when c1/c2/w are left at their defaults
+            options={"c1": self.c1, "c2": self.c2, "w": self.w, "k": int(max(1, self.swarm_size - 1)), "p": 2},
             oracle=orc,
         )
 

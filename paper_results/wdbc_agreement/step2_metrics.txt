@@ -1,0 +1,93 @@
+groups {'size': [np.str_('worst radius'), np.str_('worst perimeter'), np.str_('worst area')], 'texture': [np.str_('mean texture'), np.str_('worst texture')], 'smoothness': [np.str_('mean smoothness'), np.str_('worst smoothness')]}
+          method  n  mean_s  strict_mean  incl_mean texture  incl_worst area  incl_worst smoothness  all3  strict_expected  strict_diff  strict_ci_lo  strict_ci_hi  relaxed_mean  relaxed_expected  relaxed_diff  relaxed_ci_lo  relaxed_ci_hi  grp_size  grp_texture  grp_smoothness
+              GA 25    5.04         0.60               0.24             0.20                   0.16  0.00            0.504        0.096        -0.168         0.380          1.68             1.055         0.625          0.438          0.801      0.52         0.92            0.24
+            BPSO 25    7.48         1.32               0.64             0.36                   0.32  0.04            0.748        0.572         0.204         0.920          1.96             1.467         0.493          0.156          0.817      0.48         0.92            0.56
+              SA 25    5.48         1.00               0.48             0.40                   0.12  0.00            0.548        0.452         0.120         0.772          2.04             1.093         0.947          0.697          1.204      0.80         0.92            0.32
+             GWO 25    6.32         0.92               0.40             0.24                   0.28  0.04            0.632        0.288        -0.008         0.612          2.12             1.275         0.845          0.609          1.088      0.64         1.00            0.48
+         NSGA-II 25    3.84         0.84               0.36             0.16                   0.32  0.04            0.384        0.456         0.164         0.772          1.88             0.830         1.050          0.754          1.345      0.60         0.88            0.40
+            SHAP 25   10.00         1.00               0.00             1.00                   0.00  0.00            1.000        0.000         0.000         0.000          1.00             1.846        -0.846         -0.846         -0.846      1.00         0.00            0.00
+            LIME 25   10.00         1.80               0.80             1.00                   0.00  0.00            1.000        0.800         0.640         0.960          2.00             1.846         0.154          0.154          0.154      1.00         1.00            0.00
+             RFE 25   10.00         1.20               0.20             1.00                   0.00  0.00            1.000        0.200         0.040         0.360          2.00             1.846         0.154          0.154          0.154      1.00         1.00            0.00
+           LASSO 25   17.40         2.20               0.60             0.60                   1.00  0.20            1.740        0.460         0.288         0.624          3.00             2.533         0.467          0.341          0.603      1.00         1.00            1.00
+          Boruta 25   25.00         3.00               1.00             1.00                   1.00  1.00            2.500        0.500         0.444         0.556          3.00             2.946         0.054          0.041          0.067      1.00         1.00            1.00
+Full feature set 25   30.00         3.00               1.00             1.00                   1.00  1.00            3.000        0.000         0.000         0.000          3.00             3.000         0.000          0.000          0.000      1.00         1.00            1.00
+
+TOP10 GA
+  worst texture             0.72
+  worst concave points      0.60
+  mean concave points       0.36
+  mean area                 0.32
+  mean texture              0.24
+  worst concavity           0.24
+  texture error             0.24
+  fractal dimension error   0.24
+  worst radius              0.20
+  mean concavity            0.20
+
+TOP10 BPSO
+  mean texture              0.64
+  worst concave points      0.48
+  worst concavity           0.48
+  mean area                 0.44
+  worst area                0.36
+  worst texture             0.32
+  mean perimeter            0.32
+  fractal dimension error   0.32
+  worst smoothness          0.32
+  worst symmetry            0.32
+
+TOP10 Boruta
+  mean radius               1.00
+  mean texture              1.00
+  mean perimeter            1.00
+  mean area                 1.00
+  mean smoothness           1.00
+  mean compactness          1.00
+  mean concavity            1.00
+  mean concave points       1.00
+  radius error              1.00
+  perimeter error           1.00
+
+TOP10 SHAP
+  mean perimeter            1.00
+  mean concavity            1.00
+  mean concave points       1.00
+  worst radius              1.00
+  worst perimeter           1.00
+  worst area                1.00
+  worst concavity           1.00
+  worst concave points      1.00
+  area error                0.80
+  mean area                 0.80
+
+TOP10 RFE
+  mean concavity            1.00
+  mean concave points       1.00
+  worst radius              1.00
+  worst perimeter           1.00
+  worst area                1.00
+  worst concave points      1.00
+  mean perimeter            0.80
+  worst concavity           0.80
+  worst texture             0.80
+  mean radius               0.60
+
+strict mean by method x classifier
+classifier     lightgbm  mlp  random_forest  svm  xgboost
+method                                                   
+boruta              3.0  3.0            3.0  3.0      3.0
+bpso                1.4  0.8            1.4  1.4      1.6
+full_features       3.0  3.0            3.0  3.0      3.0
+ga                  0.6  0.6            0.4  0.8      0.6
+gwo                 0.8  0.8            1.2  0.8      1.0
+lasso               2.2  2.2            2.2  2.2      2.2
+lime                1.8  1.8            1.8  1.8      1.8
+nsga2               1.2  0.6            0.4  1.2      0.8
+rfe                 1.2  1.2            1.2  1.2      1.2
+sa                  0.8  1.2            1.0  0.8      1.2
+shap                1.0  1.0            1.0  1.0      1.0
+PEARSON worst area | worst radius 0.984
+PEARSON worst area | worst perimeter 0.9776
+PEARSON mean texture | worst texture 0.912
+PEARSON mean smoothness | worst smoothness 0.8053
+PEARSON worst radius | worst perimeter 0.9937

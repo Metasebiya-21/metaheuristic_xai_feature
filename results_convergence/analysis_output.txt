@@ -1,0 +1,71 @@
+VERIFY: runs 500 | last==val_fitness 500 | mismatches 0 | non-monotone 0
+          n  length  match  monotone
+method                              
+bpso    125      40    125       125
+ga      125      40    125       125
+gwo     125      41    125       125
+sa      125    2001    125       125
+
+flat runs (no improvement) per method: {'bpso': 3, 'ga': 0, 'gwo': 1, 'sa': 0}
+
+POOLED (evaluations to reach X% of total improvement: median [IQR])
+        n             50%              80%               90%               95% still improving last 10%
+GA    125   450 [300-650]   800 [550-1300]   1050 [750-1600]   1300 [750-1800]                      41%
+BPSO  122  975 [550-1400]  1425 [912-1750]  1575 [1150-1800]  1625 [1150-1800]                      35%
+SA    125    144 [31-340]    318 [200-727]    494 [235-1040]    633 [259-1162]                      12%
+GWO   124   200 [150-300]    600 [300-950]    800 [450-1300]    850 [600-1400]                      15%
+
+BY DATASET
+method    dataset  n              50%              80%              90%              95% still improving last 10%
+  BPSO      colon 25  1000 [600-1450] 1550 [1150-1700] 1550 [1150-1750] 1550 [1150-1750]                      32%
+  BPSO ionosphere 24   650 [475-1175]  1325 [650-1638]  1550 [650-1812]  1550 [650-1812]                      42%
+  BPSO   leukemia 25 1350 [1050-1600] 1700 [1150-1800] 1700 [1350-1800] 1700 [1400-1800]                      40%
+  BPSO    madelon 24   800 [575-1050]  1125 [838-1575] 1400 [1038-1700] 1500 [1188-1712]                      25%
+  BPSO       wdbc 24   575 [400-1350]  1550 [588-1800] 1650 [1300-1800] 1650 [1300-1800]                      38%
+    GA      colon 25    700 [600-800] 1350 [1100-1550] 1650 [1400-1750] 1800 [1650-1900]                      80%
+    GA ionosphere 25    350 [250-400]    650 [500-800]   850 [750-1350]  1150 [750-1550]                      12%
+    GA   leukemia 25    650 [600-700] 1250 [1150-1350] 1650 [1400-1750] 1800 [1700-1900]                      88%
+    GA    madelon 25    350 [350-550]    700 [550-950]   900 [700-1100]   950 [700-1100]                      20%
+    GA       wdbc 25    300 [250-400]    550 [300-700]    800 [600-950]    800 [600-950]                       4%
+   GWO      colon 25    200 [100-250]    500 [250-800]    700 [350-950]   850 [600-1250]                       8%
+   GWO ionosphere 25    250 [150-350]   700 [250-1100]   850 [400-1150]   850 [600-1350]                      16%
+   GWO   leukemia 25    200 [200-250]   550 [350-1050]   950 [400-1400]  1200 [700-1700]                      12%
+   GWO    madelon 25    300 [150-500]   700 [450-1100]   850 [700-1450]   950 [750-1500]                      12%
+   GWO       wdbc 24    200 [150-262]    475 [200-912]   675 [450-1262]   675 [450-1262]                      25%
+    SA      colon 25      328 [9-440]    461 [233-837]   637 [434-1046]   991 [551-1271]                       8%
+    SA ionosphere 25      88 [26-217]     241 [84-318]    260 [219-464]    278 [227-871]                       0%
+    SA   leukemia 25     388 [65-498]    588 [403-833]   788 [616-1128]  1076 [633-1318]                      20%
+    SA    madelon 25      61 [26-229]    688 [176-928]   829 [356-1165]   865 [464-1376]                      32%
+    SA       wdbc 25     134 [53-198]    252 [214-283]    309 [228-404]    324 [250-562]                       0%
+
+GA: share of runs with >=80%/90% of improvement by generation 20: 0.624 0.528 | median progress at gen 20 0.916 n 125
+GA by dataset, share >=90% by gen 20: {'colon': 0.16, 'ionosphere': 0.72, 'leukemia': 0.12, 'madelon': 0.72, 'wdbc': 0.92}
+
+still improving in last 10% by dataset:
+dataset colon ionosphere leukemia madelon   wdbc
+method                                          
+bpso     0.32   0.416667      0.4    0.25  0.375
+ga        0.8       0.12     0.88     0.2   0.04
+gwo      0.08       0.16     0.12    0.12   0.25
+sa       0.08        0.0      0.2    0.32    0.0
+
+median fraction of budget to 90%: {'bpso': 0.788, 'ga': 0.512, 'gwo': 0.39, 'sa': 0.247}
+             n  ge50  ge80  ge90  median
+dataset                                 
+colon       25  0.92  0.24  0.16    0.68
+ionosphere  25  1.00  0.88  0.72    0.94
+leukemia    25  0.92  0.20  0.12    0.72
+madelon     25  1.00  0.84  0.72    1.00
+wdbc        25  1.00  0.96  0.92    1.00
+pooled ge50 0.968
+WDBC+Iono RF only: ge80 0.9 ge90 0.9 n 10
+runs 75
+dataset   colon  ionosphere    wdbc
+method                             
+bpso     1310.0       892.0   757.0
+ga        811.0       385.0   356.0
+gwo      1564.0      1365.0  1454.0
+nsga2    1513.0      1079.0  1103.0
+sa       1282.0       227.0   297.0
+NSGA-II only: runs 15 serial s 3695 min 61.6
+all 5 methods: serial min 239.9 | with 6 workers ~min 40.0

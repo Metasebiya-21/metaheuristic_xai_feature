@@ -1,0 +1,17 @@
+method    dataset  seed  test_accuracy  accuracy  n_selected  selected_features  acc_ok  n_ok  wall_seconds  runtime_seconds_y
+    ga       wdbc    42       0.956140  0.956140           6                  6    True  True     57.583729          75.460747
+  bpso       wdbc    42       0.929825  0.929825           6                  6    True  True    170.147926         191.968201
+    sa       wdbc    42       0.921053  0.921053           3                  3    True  True     43.088590          55.018388
+   gwo       wdbc    42       0.956140  0.956140           4                  4    True  True    256.347377         278.665839
+ nsga2       wdbc    42       0.947368  0.947368           4                  4    True  True    208.514441         229.723424
+    ga ionosphere    42       0.887324  0.887324           5                  5    True  True     68.638404          80.184138
+  bpso ionosphere    42       0.901408  0.901408           9                  9    True  True    182.252408         187.732743
+    sa ionosphere    42       0.915493  0.915493           8                  8    True  True     45.479381          44.859308
+   gwo ionosphere    42       0.873239  0.873239           6                  6    True  True    270.265091         273.076838
+ nsga2 ionosphere    42       0.929577  0.929577           4                  4    True  True    209.108820         209.504412
+    ga      colon    42       0.923077  0.923077          79                 79    True  True    143.052420         177.598673
+  bpso      colon    42       0.846154  0.846154         127                127    True  True    211.756088         279.065482
+    sa      colon    42       0.923077  0.923077          93                 93    True  True    203.094995         255.282132
+   gwo      colon    42       0.923077  0.923077         121                121    True  True    198.772167         317.563839
+ nsga2      colon    42       0.846154  0.846154          79                 79    True  True    167.114518         305.928203
+IDENTICAL: 15 of 15

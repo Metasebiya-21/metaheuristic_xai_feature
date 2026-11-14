@@ -1,0 +1,16 @@
+distinct masks per (method, seed) across the 5 classifiers (1 = classifier-independent):
+{'boruta': 1, 'bpso': 5, 'full_features': 1, 'ga': 5, 'gwo': 5, 'lasso': 1, 'lime': 1, 'nsga2': 5, 'rfe': 1, 'sa': 5, 'shap': 1}
+
+SUPPLEMENTARY seed-cluster bootstrap (resample the 5 seeds with replacement, all runs of a seed kept), 10,000 resamples
+       method  strict_diff   s_lo  s_hi  relaxed_diff   r_lo   r_hi
+       boruta        0.500  0.380 0.620         0.054  0.027  0.084
+         bpso        0.572  0.068 1.076         0.493 -0.025  1.010
+full_features        0.000  0.000 0.000         0.000  0.000  0.000
+           ga        0.096 -0.176 0.444         0.625  0.514  0.727
+          gwo        0.288  0.092 0.472         0.845  0.652  1.042
+        lasso        0.460  0.080 0.840         0.467  0.190  0.781
+         lime        0.800  0.400 1.000         0.154  0.154  0.154
+        nsga2        0.456  0.032 0.972         1.050  0.690  1.499
+          rfe        0.200  0.000 0.600         0.154  0.154  0.154
+           sa        0.452 -0.084 0.900         0.947  0.743  1.188
+         shap        0.000  0.000 0.000        -0.846 -0.846 -0.846

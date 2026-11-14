@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this software or its results, please cite it as below."
+title: "GA-XAI: A Benchmark of Metaheuristic and Classical Feature Selection for Clinical Machine Learning"
+version: 2.0.0
+type: software
+license: Apache-2.0
+authors:
+  - family-names: Mulugeta
+    given-names: Metasebiya
+    affiliation: Addis Ababa University
+  - family-names: Gizachew
+    given-names: Beakal
+    affiliation: Addis Ababa University
+repository-code: "https://github.com/Metasebiya-21/metaheuristic_xai_feature"
+abstract: >-
+  Code and results for the corrected, leakage-controlled GA-XAI benchmark of
+  metaheuristic, explainability-based and classical feature selection
+  (5 datasets, 5 classifiers, 11 methods, 5 seeds, 1,375 runs), together with
+  the parameter-robustness sweep, convergence analysis and WDBC feature-agreement
+  analysis reported in the paper.
+keywords:
+  - feature selection
+  - metaheuristics
+  - explainable AI
+  - SHAP
+  - benchmark
+  - data leakage

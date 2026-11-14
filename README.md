@@ -1,5 +1,16 @@
 # Metaheuristic vs. XAI Feature Selection Benchmark
 
+## Paper
+
+This repository accompanies **"GA-XAI: A Benchmark of Metaheuristic and Classical
+Feature Selection for Clinical Machine Learning"**. The numbers behind the paper
+are in [`paper_results/`](paper_results/) (see its `MANIFEST.md`), the scripts in
+`scripts/paper/`, and the exact commands in [REPRODUCE.md](REPRODUCE.md).
+
+> **Release v1.0.0 predates the leakage correction** (see
+> `docs/leakage_correction_note.md`) and must not be used to reproduce the paper.
+> Use v2.0.0 or later.
+
 Benchmarks nature-inspired metaheuristics against explainability-based and classical
 feature selection across five public datasets and five classifier families, under a
 shared evaluation oracle and a single scalar fitness.
@@ -60,15 +71,20 @@ Outputs (default `results/`, `plots/`):
 | `results/<dataset>_<clf>_<method>_seed<n>.parquet` | per-run artifact (resume-friendly) |
 | `plots/convergence.png` | best-fitness convergence for the search methods |
 
-### Fitness-weight x budget ablation
+### Parameter-robustness sweep (used in the paper)
 
 ```bash
-python src/run_ablation.py --generations 40 100 --n-jobs -1   # GA + RF, alpha in {0.7, 0.8, 0.9}
+python scripts/paper/sweep/sweep.py run --n-jobs 6     # ~7.8 h on 6 workers
+python scripts/paper/sweep/analyze.py
 ```
 
-Defaults: `wdbc ionosphere colon`, 5 seeds, population 50 (40 generations = the
-benchmark's 2,000-evaluation budget). Writes `results/ablation/ablation_runs.csv`
-and `results/ablation/ablation_summary.csv`. `--quick` is a one-run smoke test.
+All five metaheuristics (GA, BPSO, SA, GWO, NSGA-II), Random Forest, all five
+datasets, seeds 42-46, one factor varied at a time from the defaults: budget
+(1,000 / 5,000 / 10,000 evaluations), population (25 / 100 at 2,000), alpha
+(0.7 / 0.9) and one method parameter at 0.5x and 2x (GA and NSGA-II mutation
+rate, BPSO inertia weight `w`, SA initial temperature) -- 1,025 runs, compared
+pairwise with the five-seed baseline (Wilcoxon, Holm within factor). See
+[REPRODUCE.md](REPRODUCE.md) and `paper_results/sweep/`.
 
 ### Notebook
 
@@ -102,4 +118,4 @@ cli.py             argument parsing -> runner -> summaries/plots
   recorded. `results/feature_stability.csv` reports selection stability across seeds
   (mean pairwise Jaccard + Nogueira index).
 - For meaningful paired statistics use `--seeds 30` or more.
-- Academic / research use; cite scikit-learn, SHAP, LIME, DEAP, PySwarms, Boruta.
+- Licensed under the Apache License 2.0 (see `LICENSE`). Please cite the paper (`CITATION.cff`) and scikit-learn, SHAP, LIME, DEAP, PySwarms, Boruta.

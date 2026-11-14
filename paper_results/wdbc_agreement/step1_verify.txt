@@ -1,0 +1,4 @@
+wdbc rows 275 | methods 11 | classifiers 5 | seeds [42, 43, 44, 45, 46]
+verified 275 of 275 rows (accuracy |diff|<=1e-9, n_selected equal, len(indices)==n_selected, index sets equal to parquet)
+index range 0 29
+rows per method {'boruta': 25, 'bpso': 25, 'full_features': 25, 'ga': 25, 'gwo': 25, 'lasso': 25, 'lime': 25, 'nsga2': 25, 'rfe': 25, 'sa': 25, 'shap': 25}
